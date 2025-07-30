@@ -1,0 +1,169 @@
+import { useEffect, useRef, useState } from "react";
+import { useAjustes } from "../context/useAjustes";
+
+
+const Juego: React.FC = () => {
+    const { duracionJuego, velocidadCuadro } = useAjustes();
+    const colores = ["bg-red-500", "bg-green-500", "bg-blue-500", "bg-yellow-500", "bg-purple-500"];
+    const tamaños = ["w-12 h-12", "w-16 h-16", "w-20 h-20", "w-24 h-24"];
+
+    const [colorCuadro, setColorCuadro] = useState("bg-red-500");
+    const [tamañoCuadro, setTamañoCuadro] = useState("w-16 h-16");
+
+    const [jugando, setJugando] = useState(false);
+    const [tiempo, setTiempo] = useState(0);
+    const [puntaje, setPuntaje] = useState(0);
+    const [posicion, setPosicion] = useState({ top: 0, left: 0 });
+    const cuadroRef = useRef<HTMLDivElement>(null);
+    const intervaloTiempo = useRef<NodeJS.Timeout | null>(null);
+    const intervaloMovimiento = useRef<NodeJS.Timeout | null>(null);
+    const [juegoTerminado, setJuegoTerminado] = useState(false);
+    const [mensaje, setMensaje] = useState("");
+    const [mejorPuntaje, setMejorPuntaje] = useState(() => {
+        const guardado = localStorage.getItem("mejorPuntaje");
+        return guardado ? parseInt(guardado) : 0;
+    });
+
+    useEffect(() => {
+        if (!jugando) return;
+
+        const intervalo = setInterval(() => {
+            const ancho = window.innerWidth - 100; // 100 = ancho estimado del cuadro
+            const alto = window.innerHeight - 100; // 100 = alto estimado del cuadro
+
+            const nuevaPosicion = {
+                top: Math.floor(Math.random() * alto),
+                left: Math.floor(Math.random() * ancho)
+            };
+
+            setPosicion(nuevaPosicion);
+            cambiarEstiloCuadro();
+        }, velocidadCuadro);
+
+        return () => clearInterval(intervalo);
+    }, [jugando, velocidadCuadro]);
+
+    // Detener juego después de 30s
+
+    function cambiarEstiloCuadro() {
+        const colorRandom = colores[Math.floor(Math.random() * colores.length)];
+        const tamañoRandom = tamaños[Math.floor(Math.random() * tamaños.length)];
+
+        setColorCuadro(colorRandom);
+        setTamañoCuadro(tamañoRandom);
+    }
+
+
+    const iniciarJuego = () => {
+        setTiempo(duracionJuego);
+        setJugando(true);
+        setJuegoTerminado(false);
+        setPuntaje(0);
+        // Iniciar temporizador
+        intervaloTiempo.current = setInterval(() => {
+            setTiempo((prev) => {
+                if (prev <= 1) {
+                    finalizarJuego();
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+    };
+
+    const finalizarJuego = () => {
+        setJuegoTerminado(true);
+        setJugando(false);
+        if (puntaje >= 30) {
+            setMensaje("¡Excelente! ¡Eres un campeón!");
+        } else if (puntaje >= 20) {
+            setMensaje("¡Buen trabajo! ¡Sigue practicando!");
+        } else {
+            setMensaje("¡No te rindas! ¡Puedes mejorar!");
+        }
+        if (intervaloTiempo.current) clearInterval(intervaloTiempo.current);
+        if (intervaloMovimiento.current) clearInterval(intervaloMovimiento.current);
+
+        if (puntaje > mejorPuntaje) {
+            setMejorPuntaje(puntaje);
+            localStorage.setItem("mejorPuntaje", puntaje.toString());
+        }
+    };
+
+    const sumarPunto = () => {
+        if (jugando) setPuntaje((prev) => prev + 1);
+    };
+
+    return (
+        <div className="h-screen w-screen flex flex-col items-center justify-center bg-gray-100">
+            {/* Estado: Antes de jugar */}
+            {!jugando && !juegoTerminado && (
+
+                <div>
+                    <button
+                        onClick={iniciarJuego}
+                        className="bg-blue-600 text-white px-6 py-3 rounded-lg text-lg shadow-md hover:bg-blue-800 transition"
+                    >
+                        Iniciar Juego
+                    </button>
+                </div>
+            )}
+
+            {/* Estado: Durante el juego */}
+            {jugando && !juegoTerminado && (
+                <div className="relative h-full w-full">
+                    <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white px-4 py-2 rounded shadow-md text-xl font-bold text-purple-700">
+                        🥇 Mejor Puntaje: {mejorPuntaje}
+                    </div>
+
+                    {/* Temporizador */}
+                    <div className="absolute top-40 left-40 text-lg font-semibold bg-white px-3 py-1 rounded shadow-md text-xl">
+                        ⏱️ Tiempo: <span className="text-blue-600">{tiempo}</span>s
+                    </div>
+
+                    {/* Puntaje actual */}
+                    <div className="absolute top-40 right-40 text-lg font-semibold bg-white px-3 py-1 rounded shadow-md text-xl">
+                        🏆 Puntaje: <span className="text-green-600">{puntaje}</span>
+                    </div>
+
+                    {/* Cuadro escurridizo */}
+                    <div
+                        ref={cuadroRef}
+                        onClick={sumarPunto}
+                        className={`absolute ${colorCuadro} ${tamañoCuadro} rounded-md cursor-pointer transition-all duration-200`}
+                        style={{ top: posicion.top, left: posicion.left }}
+                    ></div>
+                </div>
+            )}
+
+            {/* Estado: Juego terminado */}
+            {juegoTerminado && (
+                <div className="flex flex-col items-center justify-center bg-white p-8 rounded-xl shadow-lg max-w-md mx-auto text-center">
+                    <h1 className="text-4xl font-extrabold text-blue-700 mb-3">🎯 Juego Terminado</h1>
+                    <p className="text-xl text-gray-800 mb-2">Puntaje total: <span className="font-bold">{puntaje}</span></p>
+                    <p className="text-green-600 font-semibold mb-6">{mensaje}</p>
+
+                    {/* Volver a jugar */}
+                    <button
+                        onClick={iniciarJuego}
+                        className="w-full bg-blue-600 hover:bg-blue-800 text-white py-3 rounded-lg text-lg font-semibold shadow-md transition mb-4"
+                    >
+                        Volver a jugar
+                    </button>
+
+                    {/* Botón de inicio */}
+                    <a
+                        href="/"
+                        className="w-full block bg-red-600 hover:bg-red-800 text-white py-3 rounded-lg text-lg font-semibold shadow-md transition"
+                    >
+                        Inicio
+                    </a>
+                </div>
+
+            )}
+        </div>
+    );
+
+}
+
+export default Juego;
