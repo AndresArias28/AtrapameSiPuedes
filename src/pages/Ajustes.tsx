@@ -14,7 +14,7 @@ const Ajustes: React.FC = () => {
   // Estado local temporal
   const [duracionInput, setDuracionInput] = useState(duracionJuego.toString());
   const [velocidadInput, setVelocidadInput] = useState(velocidadCuadro.toString());
-const navigate = useNavigate();
+  const navigate = useNavigate();
 
   // Cambiar duración del juego (segundos)
   const handleCambiarDuracion = (e: React.ChangeEvent<HTMLInputElement>) => {
