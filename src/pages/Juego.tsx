@@ -112,17 +112,18 @@ const Juego: React.FC = () => {
             {/* Estado: Durante el juego */}
             {jugando && !juegoTerminado && (
                 <div className="relative h-full w-full">
-                    <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white px-4 py-2 rounded shadow-md text-xl font-bold text-purple-700">
+                    {/* Mejor Puntaje centrado arriba */}
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 transform bg-white px-4 py-2 rounded shadow-md text-base md:text-lg lg:text-xl font-bold text-purple-700">
                         🥇 Mejor Puntaje: {mejorPuntaje}
                     </div>
 
-                    {/* Temporizador */}
-                    <div className="absolute top-40 left-40 text-lg font-semibold bg-white px-3 py-1 rounded shadow-md text-xl">
+                    {/* Temporizador a la izquierda (adaptativo) */}
+                    <div className="absolute top-[15vh] left-[5vw] text-sm md:text-base lg:text-lg font-semibold bg-white px-3 py-1 rounded shadow-md">
                         ⏱️ Tiempo: <span className="text-blue-600">{tiempo}</span>s
                     </div>
 
-                    {/* Puntaje actual */}
-                    <div className="absolute top-40 right-40 text-lg font-semibold bg-white px-3 py-1 rounded shadow-md text-xl">
+                    {/* Puntaje actual a la derecha (adaptativo) */}
+                    <div className="absolute top-[15vh] right-[5vw] text-sm md:text-base lg:text-lg font-semibold bg-white px-3 py-1 rounded shadow-md">
                         🏆 Puntaje: <span className="text-green-600">{puntaje}</span>
                     </div>
 
@@ -134,6 +135,7 @@ const Juego: React.FC = () => {
                         style={{ top: posicion.top, left: posicion.left }}
                     ></div>
                 </div>
+
             )}
 
             {/* Estado: Juego terminado */}
