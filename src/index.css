@@ -1,1 +1,17 @@
 @import "tailwindcss";
+
+/* animacion personalizada para particulas */
+@keyframes disparar {
+  0% {
+    opacity: 1;
+    transform: scale(1) translate(0, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) scale(1.5);
+  }
+}
+
+.animate-disparar {
+  animation: disparar 0.5s ease-out forwards;
+}

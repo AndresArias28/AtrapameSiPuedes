@@ -1,4 +1,3 @@
-// hooks/useAjustes.ts
 import { useContext } from "react";
 import { AjustesContext } from "../context/AjustesContext";
 

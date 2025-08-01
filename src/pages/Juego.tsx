@@ -6,10 +6,19 @@ const Juego: React.FC = () => {
     const { duracionJuego, velocidadCuadro } = useAjustes();
     const colores = ["bg-red-500", "bg-green-500", "bg-blue-500", "bg-yellow-500", "bg-purple-500"];
     const tamaños = ["w-12 h-12", "w-16 h-16", "w-20 h-20", "w-24 h-24"];
-
+    const [visible, setVisible] = useState(true);
     const [colorCuadro, setColorCuadro] = useState("bg-red-500");
     const [tamañoCuadro, setTamañoCuadro] = useState("w-16 h-16");
+    type Particula = {
+        id: number;
+        top: number;
+        left: number;
+        dx: number;
+        dy: number;
+    };
+    const sonidoExplosion = useRef<HTMLAudioElement | null>(null);
 
+    const [particulas, setParticulas] = useState<Particula[]>([]);
     const [jugando, setJugando] = useState(false);
     const [tiempo, setTiempo] = useState(0);
     const [puntaje, setPuntaje] = useState(0);
@@ -26,10 +35,12 @@ const Juego: React.FC = () => {
 
     useEffect(() => {
         if (!jugando) return;
+        sonidoExplosion.current = new Audio("/sound/explosion.mp3");
+        sonidoExplosion.current.volume = 0.5;
 
         const intervalo = setInterval(() => {
-            const ancho = window.innerWidth - 100; // 100 = ancho estimado del cuadro
-            const alto = window.innerHeight - 100; // 100 = alto estimado del cuadro
+            const ancho = window.innerWidth - 100;
+            const alto = window.innerHeight - 50;
 
             const nuevaPosicion = {
                 top: Math.floor(Math.random() * alto),
@@ -43,12 +54,9 @@ const Juego: React.FC = () => {
         return () => clearInterval(intervalo);
     }, [jugando, velocidadCuadro]);
 
-    // Detener juego después de 30s
-
     function cambiarEstiloCuadro() {
         const colorRandom = colores[Math.floor(Math.random() * colores.length)];
         const tamañoRandom = tamaños[Math.floor(Math.random() * tamaños.length)];
-
         setColorCuadro(colorRandom);
         setTamañoCuadro(tamañoRandom);
     }
@@ -92,6 +100,23 @@ const Juego: React.FC = () => {
 
     const sumarPunto = () => {
         if (jugando) setPuntaje((prev) => prev + 1);
+
+        if (sonidoExplosion.current) {
+            sonidoExplosion.current.currentTime = 0; // reinicia el sonido si se repite rápido
+            sonidoExplosion.current.play();
+        }
+
+        const nuevas = Array.from({ length: 8 }, (_, i) => ({
+            id: Date.now() + i,
+            top: posicion.top,
+            left: posicion.left,
+            dx: Math.random() * 100 - 50,  // desplazamiento x aleatorio
+            dy: Math.random() * 100 - 50,  // desplazamiento y aleatorio
+        }));
+
+        setParticulas((prev) => [...prev, ...nuevas]);
+        setVisible(false);
+        setTimeout(() => setVisible(true), 300);
     };
 
     return (
@@ -106,7 +131,9 @@ const Juego: React.FC = () => {
                     >
                         Iniciar Juego
                     </button>
+
                 </div>
+
             )}
 
             {/* Estado: Durante el juego */}
@@ -122,18 +149,38 @@ const Juego: React.FC = () => {
                         ⏱️ Tiempo: <span className="text-blue-600">{tiempo}</span>s
                     </div>
 
+                    {/* efecto de explosion temporal */}
+                    {particulas.map((p) => (
+                        <div
+                            key={p.id}
+                            className="absolute w-3 h-3 rounded-sm shadow-md  animate-disparar"
+                            style={{
+                                top: p.top,
+                                left: p.left,
+                                backgroundColor: ['#facc15', '#f87171', '#60a5fa', '#34d399'][p.id % 4],
+                                border: '1px solid white',
+                                // animacion con variables css
+                                '--dx': `${p.dx}px`,
+                                '--dy': `${p.dy}px`,
+                            } as React.CSSProperties}
+                        ></div>
+                    ))}
+
                     {/* Puntaje actual a la derecha (adaptativo) */}
                     <div className="absolute top-[15vh] right-[5vw] text-sm md:text-base lg:text-lg font-semibold bg-white px-3 py-1 rounded shadow-md">
                         🏆 Puntaje: <span className="text-green-600">{puntaje}</span>
                     </div>
 
                     {/* Cuadro escurridizo */}
-                    <div
-                        ref={cuadroRef}
-                        onClick={sumarPunto}
-                        className={`absolute ${colorCuadro} ${tamañoCuadro} rounded-md cursor-pointer transition-all duration-200`}
-                        style={{ top: posicion.top, left: posicion.left }}
-                    ></div>
+                    {visible && (
+
+                        <div
+                            ref={cuadroRef}
+                            onClick={sumarPunto}
+                            className={`absolute ${colorCuadro} ${tamañoCuadro} rounded-md cursor-pointer transition-all duration-200`}
+                            style={{ top: posicion.top, left: posicion.left }}
+                        ></div>
+                    )}
                 </div>
 
             )}
@@ -161,7 +208,6 @@ const Juego: React.FC = () => {
                         Inicio
                     </a>
                 </div>
-
             )}
         </div>
     );
